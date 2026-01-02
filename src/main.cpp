@@ -9,6 +9,11 @@ int main(int argc, char* argv[]) {
     int port = 6379; //default
     if(argc >= 2) port = std::stoi(argv[1]);
 
+    if (RedisDatabase::getInstance().load("dump.my_rdb"))
+        std::cout << "Database loaded from dump.my_rdb\n";
+    else
+        std::cout << "No existing database found or load failed. Starting fresh.\n";
+
     RedisServer server(port);
 
     //background persistance: dump the database every 300 seconds. (5 * 60 seconds save database)
