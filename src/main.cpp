@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
 
     //background persistance: dump the database every 300 seconds. (5 * 60 seconds save database)
     std::thread persistanceThread([](){
-        while (false) {
+        while (true) {
             std::this_thread::sleep_for(std::chrono::seconds(300));
             //dump the database
             if(!RedisDatabase::getInstance().dump("dump.my_rdb"))

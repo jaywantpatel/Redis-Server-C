@@ -138,6 +138,17 @@ static std::string handleRename(const std::vector<std::string>& tokens, RedisDat
 }
 
 //List operations
+static std::string handleLget(const std::vector<std::string>& tokens, RedisDatabase& db) {
+    if (tokens.size() < 2)
+        return "-Error: LGET requires key\r\n";
+    auto elems = db.lget(tokens[1]);
+    std::ostringstream oss;
+    oss << "*" << elems.size() << "\r\n";
+    for (const auto& elem : elems)
+        oss << "$" << elem.size() << "\r\n" << elem << "\r\n";
+    return oss.str();
+}
+
 static std::string handleLlen(const std::vector<std::string>& tokens, RedisDatabase& db) {
     if (tokens.size() < 2)
         return "-Error: LLEN requires key\r\n";
@@ -148,7 +159,9 @@ static std::string handleLlen(const std::vector<std::string>& tokens, RedisDatab
 static std::string handleLpush(const std::vector<std::string>& tokens, RedisDatabase& db) {
     if (tokens.size() < 3)
         return "-Error: LPUSH requires key and at least one value\r\n";
-    db.lpush(tokens[1], tokens[2]);
+    for (size_t i = 2; i < tokens.size(); ++i) {
+        db.lpush(tokens[1], tokens[i]);
+    }   
     ssize_t len = db.llen(tokens[1]);
     return ":" + std::to_string(len) + "\r\n";
 }
@@ -156,7 +169,9 @@ static std::string handleLpush(const std::vector<std::string>& tokens, RedisData
 static std::string handleRpush(const std::vector<std::string>& tokens, RedisDatabase& db) {
     if (tokens.size() < 3)
         return "-Error: RPUSH requires key and at least one value\r\n";
-    db.rpush(tokens[1], tokens[2]);
+    for (size_t i = 2; i < tokens.size(); ++i) {
+        db.rpush(tokens[1], tokens[i]);
+    }
     ssize_t len = db.llen(tokens[1]);
     return ":" + std::to_string(len) + "\r\n";
 }
@@ -305,15 +320,13 @@ static std::string handleHmset(const std::vector<std::string>& tokens, RedisData
 RedisCommandHandler::RedisCommandHandler () {}
 
 std::string RedisCommandHandler::processCommand(const std::string& commandLine) {
-    //use RESP parser
+//use RESP parser
     std::vector<std::string> tokens = parseRespCommand(commandLine);
     if(tokens.empty()) return "-Error: Empty cpmmand\r\n";
 
-//    std::cout << commandLine << "\n";
-//    for (auto& t: tokens) std::cout<< t << "\n";
-
     std::string cmd = tokens[0];
     std::transform(cmd.begin(), cmd.end(), cmd.begin(), ::toupper);
+
 //Connect to Database
     RedisDatabase& db = RedisDatabase::getInstance();   
 
@@ -341,6 +354,8 @@ std::string RedisCommandHandler::processCommand(const std::string& commandLine) 
     else if (cmd == "RENAME")
         return handleRename(tokens, db);
     // List Operations 
+    else if (cmd == "LGET")
+        return handleLget(tokens, db);
     else if (cmd == "LLEN")
         return handleLlen(tokens, db);
     else if (cmd == "LPUSH")

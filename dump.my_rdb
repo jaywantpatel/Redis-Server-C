@@ -1,0 +1,3 @@
+L mylist a b c d
+H user:100 name:Alice email:alice@email.com
+H user:200 name:Bob city:Berlin age:25
